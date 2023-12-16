@@ -14,7 +14,7 @@ m: float = 0.15
 
 # STORING MATRICES
 
-def PR_store() -> np.ndarray:
+def compute_PR_with_restoring() -> np.ndarray:
     """
     Compute the PR vector of M_m (storing matrices) using the power method,
     that is:
@@ -45,7 +45,7 @@ def PR_store() -> np.ndarray:
 
 # WITHOUT STORING MATRICES
 
-def PR_without_store() -> np.ndarray:
+def compute_PR_without_storing() -> np.ndarray:
     """
     Computes the PR vector of M_m using the power method
     (without storing matrices). Leverages the Compressed Sparse Column (CSC)
@@ -100,7 +100,7 @@ def _main_with_store() -> np.ndarray:
     report computation time and then, return the solution.
     """
     start = time.time()
-    x = PR_store()
+    x = compute_PR_with_restoring()
     print("With storing matrices:")
     print(4 * " " + f'Computation time: {time.time() - start} s')
     # print(4 * " " + f'PR vector: {x}')
@@ -113,7 +113,7 @@ def _main_without_store() -> np.ndarray:
     storing matrices, report computation time and then, return the solution.
     """
     start = time.time()
-    x = PR_without_store()
+    x = compute_PR_without_storing()
     print("Without storing matrices:")
     print(4 * " " + f'Computation time: {time.time() - start} s')
     # print(4 * " " + f'PR vector: {x}')
