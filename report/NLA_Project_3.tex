@@ -1,0 +1,96 @@
+
+\documentclass[12pt]{scrartcl}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,scrextend}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\newcommand{\cont}{\subseteq}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage[mathscr]{euscript}
+\let\euscr\mathscr \let\mathscr\relax
+\usepackage[scr]{rsfso}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage[colorlinks=true, pdfstartview=FitV, linkcolor=blue,
+citecolor=blue, urlcolor=blue]{hyperref}
+
+\DeclareMathOperator{\arcsec}{arcsec}
+\DeclareMathOperator{\arccot}{arccot}
+\DeclareMathOperator{\arccsc}{arccsc}
+\newcommand{\ddx}{\frac{d}{dx}}
+\newcommand{\dfdx}{\frac{df}{dx}}
+\newcommand{\ddxp}[1]{\frac{d}{dx}\left( #1 \right)}
+\newcommand{\dydx}{\frac{dy}{dx}}
+\let\ds\displaystyle
+\newcommand{\intx}[1]{\int #1 \, dx}
+\newcommand{\intt}[1]{\int #1 \, dt}
+\newcommand{\defint}[3]{\int_{#1}^{#2} #3 \, dx}
+\newcommand{\imp}{\Rightarrow}
+\newcommand{\un}{\cup}
+\newcommand{\inter}{\cap}
+\newcommand{\ps}{\mathscr{P}}
+\newcommand{\set}[1]{\left\{ #1 \right\}}
+\newtheorem*{sol}{Solution}
+\newtheorem*{claim}{Claim}
+\newtheorem{problem}{Problem}
+\begin{document}
+
+\lhead{\textbf{Project 3 NLA}: \textit{Page Rank implementations}}
+%\chead{\today}
+\rhead{Gerard Castro}
+
+\title{Numerical Linear Algebra: Project 3}
+\subtitle{Page Rank implementations}
+\author{Gerard Castro Castillo}
+\maketitle
+
+
+% C1
+
+\subsection*{C1: Compute the PR vector of $M_m$ using the power method (adapted to PR computation). The algorithm reduces to iterate $x_{k+1}=(1-m) G D x_k+e z^t x_k$ until $\left\|x_{k+1}-x_k\right\|_{\infty}<$ tol.}
+
+The implementation is found at the \texttt{c1c2.py} script, which also contains the resolution of the C2 problem.
+
+First of all, importing the corresponding routines of the \texttt{auxiliary.py} module, the link matrix $G$ is loaded from the file and the sparse diagonal matrix $D$ created. The latter is created computing the out-degree values $n_j$ of a page $j$ and, then, defining $D=\operatorname{diag}\left(d_{11}, \cdots, d_{n n}\right)$, where $d_{j j}=\frac{1}{n_j}$ if $n_j \neq 0$ and $d_{j j}=0$, otherwise.\\
+
+Once defined $A=G D$ (and computed with the \textit{built-in} \texttt{scipy} method), 
+
+the \texttt{compute\_{}PR\_{}with\_{}storing} function computes \textit{PageRank} (PR) vector (with storing) from the $M_m = (1 - m) A + m S$ matrix. Essentially the algorithm iterates $ x_{k+1} = M_m x_k $ until $\left\|x_k-x_{k+1}\right\|_{\infty} < \texttt{tol}$, and it starts at $x_0=(1 / n, \ldots, 1 / n)$ as starting point.\\
+
+ At most, the only non-triviality of the exercise is the $z=\left(z_1, \cdots, z_n\right)^t$ vector computation. 
+ 
+ Since it is defined as $
+z_j=\left\{\begin{array}{l}
+m / n \text { if column } j \text { of } A \text { contains non-zero elements, } \\
+1 / n \text { otherwise. }
+\end{array}\right.$ 
+
+we need to know whether column $j$ of matrix $A$ contains non-zero elements. However, since $A$ is a \texttt{scipy} (COO) sparse matrix, we can leverage the  method $\texttt{A.indices}$. This method returns an array for each non-zero element with the index of the column where it is. Then $\texttt{np.unique(A.indices)}=[0,2,3,4]$ directly retrieves the columns' indices of the matrix $A$ with non-zero elements and, therefore, the vector $z$ can be immediately computed.
+
+Finally, after setting $\texttt{tol} = \texttt{1e-15}$ to resemble the machine $\epsilon$ in \textit{Python}, the PR vector was found in around $0.18\ \mathrm{s}$ ($\pm 0.01\ \mathrm{s}$).
+
+%  C2: implementation of the rest of algorithm for given n
+
+\subsection*{C2: Compute the PR vector of $M_m$ using the power method without storing matrices.}
+
+The implementation, also found at \texttt{c1c2.py} module, proceeds essentially the same as C1 but now using \texttt{compute\_{}PR\_{}without\_{}storing} to compute the PR vector without storing the matrices ($M_m, A, D, G$) and from the idea provided in the statement.\\
+
+In this case, the main difficulty posed is to calculate the web pages with link to page $k$, $L_k$, (and the number of outgoing links from page $k$, $n_k$), as per the step 1 (and 2) in the statement idea. However, since $n_k$ is the length of $L_k$, the problem reduces to compute $L_k$ and, to do so, the \texttt{scipy} method \texttt{indptr} for sparse (CSC) matrices can be now leveraged. 
+
+In particular, given the link matrix $G$ (filled just with 0 or 1) and certain $k$, $L_k$ is given by $\texttt{G.indices[G.indptr[k]:G.indptr[k+1]]}$.\\ 
+
+This is because, the method \texttt{G.indptr} maps the elements of \texttt{data} \& \texttt{indices} to rows such that, for row $k$, $\texttt{G.indptr[i]:G.indptr[i+1]}$ are the \texttt{indices} of elements to take from \texttt{data} corresponding to row $i$. 
+
+So, if we assume $\texttt{A.indptr[i]}=j$ and $\texttt{A.indptr[i+1]}=l$, the data corresponding to row $i$ would be at columns indices $\texttt{[j: l]}$, \textit{i.e. }$\texttt{A.data[j: l]}$\footnote{\texttt{A.data} is an array containing all the non-zero values of the sparse matrix.}.\\ 
+
+To conclude and regarding the results, the same $\texttt{tol}$ value as before was used and the PR vector was found in around $11.3\ \mathrm{s}$ ($\pm 0.3\ \mathrm{s}$). While the amount of $RAM$ memory consumed in the calculations is much lower now, there has been a $\sim 100\mathrm{x}$ increase in computational time. This represents the price to pay not to store any matrix.
+
+However, as expected, the solution is "\textit{approximately}" the same (with a difference of $1.59451\cdot 10^{-14}$).
+ 
+\end{document}
